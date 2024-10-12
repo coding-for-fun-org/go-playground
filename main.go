@@ -2,20 +2,55 @@ package main
 
 import (
 	"fmt"
-	"log"
 
-	"github.com/coding-for-fun-org/go-playground/pkg/accounts"
+	"github.com/coding-for-fun-org/go-playground/pkg/dictionary"
 )
 
 func main() {
-	account := accounts.BankAccount{}
-	account.Deposit(100)
-	fmt.Println(account)
-	err := account.Withdraw(50)
+	d := dictionary.Dictionary{}
+	err := d.Add("hello", "greeting")
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
 	}
-	fmt.Println(account)
-	account.ChangeOwner("new owner")
-	fmt.Println(account)
+
+	d.Add("what", "asking for information")
+	d.Add("world", "planet earth")
+
+	helloDefinition, errHello := d.Search("hello")
+	if err != nil {
+		fmt.Println(errHello)
+	} else {
+		fmt.Println(helloDefinition)
+	}
+
+	errHelloUpdate := d.Update("hello", "greeting2")
+	if errHelloUpdate != nil {
+		fmt.Println(errHelloUpdate)
+	}
+
+	newHelloDefinition, errNewHello := d.Search("hello")
+	if errNewHello != nil {
+		fmt.Println(errNewHello)
+	} else {
+		fmt.Println(newHelloDefinition)
+	}
+
+	whatDefinition, errWhat := d.Search("what")
+	if errWhat != nil {
+		fmt.Println(errWhat)
+	} else {
+		fmt.Println(whatDefinition)
+	}
+
+	d.Delete("what")
+	if _, errWhat := d.Search("what"); errWhat != nil {
+		fmt.Println("successfully deleted")
+	}
+
+	world2Definition, errWorld2 := d.Search("world2")
+	if errWorld2 != nil {
+		fmt.Println(errWorld2)
+	} else {
+		fmt.Println(world2Definition)
+	}
 }
