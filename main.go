@@ -1,56 +1,59 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 
-	"github.com/coding-for-fun-org/go-playground/pkg/dictionary"
+	"github.com/coding-for-fun-org/go-playground/pkg/command/gh"
 )
 
 func main() {
-	d := dictionary.Dictionary{}
-	err := d.Add("hello", "greeting")
-	if err != nil {
-		fmt.Println(err)
+	repos := gh.GetRepositories("coding-for-fun-org", 5)
+	c := make(chan gh.RepoDetail)
+	// Print the result
+	for _, repo := range repos {
+		fmt.Printf("Repository Name: %s\n", fmt.Sprintf("%s/%s", repo.Owner.Login, repo.Name))
+
+		go gh.GetRepositoryDetail(fmt.Sprintf("%s/%s", repo.Owner.Login, repo.Name), c)
+
 	}
 
-	d.Add("what", "asking for information")
-	d.Add("world", "planet earth")
+	for range repos {
+		repoDetail := <-c
 
-	helloDefinition, errHello := d.Search("hello")
-	if err != nil {
-		fmt.Println(errHello)
+		for _, user := range repoDetail.AssignableUsers {
+			fmt.Printf("User ID: %s, Login: %s, Name: %s\n", user.ID, user.Login, user.Name)
+		}
+	}
+
+	headBranch := "feat/KPC-3130/hello-greeting"
+	branchCommits := gh.GetBranchCommits(
+		"coding-for-fun-org",
+		"frontend",
+		"main",
+		headBranch,
+	)
+
+	if len(branchCommits) == 1 {
+		commit := branchCommits[0]
+
+		title, body := gh.SplitCommitSummaryAndDescription(commit.Message)
+
+		rawCommitSummary, _ := json.Marshal(title)
+		log.Println(string(rawCommitSummary))
+
+		rawCommitDescription, _ := json.Marshal(body)
+		log.Println(string(rawCommitDescription))
 	} else {
-		fmt.Println(helloDefinition)
-	}
+		for _, commit := range branchCommits {
+			title, body := gh.SplitCommitSummaryAndDescription(commit.Message)
 
-	errHelloUpdate := d.Update("hello", "greeting2")
-	if errHelloUpdate != nil {
-		fmt.Println(errHelloUpdate)
-	}
+			rawCommitSummary, _ := json.Marshal(title)
+			log.Println(string(rawCommitSummary))
 
-	newHelloDefinition, errNewHello := d.Search("hello")
-	if errNewHello != nil {
-		fmt.Println(errNewHello)
-	} else {
-		fmt.Println(newHelloDefinition)
-	}
-
-	whatDefinition, errWhat := d.Search("what")
-	if errWhat != nil {
-		fmt.Println(errWhat)
-	} else {
-		fmt.Println(whatDefinition)
-	}
-
-	d.Delete("what")
-	if _, errWhat := d.Search("what"); errWhat != nil {
-		fmt.Println("successfully deleted")
-	}
-
-	world2Definition, errWorld2 := d.Search("world2")
-	if errWorld2 != nil {
-		fmt.Println(errWorld2)
-	} else {
-		fmt.Println(world2Definition)
+			rawCommitDescription, _ := json.Marshal(body)
+			log.Println(string(rawCommitDescription))
+		}
 	}
 }
