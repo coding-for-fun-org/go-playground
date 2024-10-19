@@ -25,6 +25,8 @@ type RepoOwner struct {
 type RepoDetail struct {
 	AssignableUsers  []RepoDetailAssignableUser `json:"assignableUsers"`
 	DefaultBranchRef RepoDetailDefaultBranchRef `json:"defaultBranchRef"`
+	Owner            RepoOwner                  `json:"owner"`
+	Name             string                     `json:"name"`
 }
 
 // RepoDetailAssignableUser struct to represent an assignable user
@@ -111,7 +113,7 @@ func GetRepositoryDetail(
 		"view",
 		repo,
 		"--json",
-		"assignableUsers,defaultBranchRef",
+		"assignableUsers,defaultBranchRef,owner,name",
 	)
 	output, err := cmd.Output()
 	if err != nil {
@@ -167,17 +169,6 @@ func GetPullRequests(repo string, limit int, ch chan<- []PullRequest) []PullRequ
 	}
 
 	return prs
-}
-
-// SplitCommitSummaryAndDescription function to split the commit message into summary and description
-func SplitCommitSummaryAndDescription(commitMessage string) (string, string) {
-	parts := strings.SplitN(commitMessage, "\n\n", 2)
-
-	if len(parts) == 2 {
-		return parts[0], parts[1]
-	}
-
-	return commitMessage, ""
 }
 
 // GetBranchCommits function to get the commits between two branches from GitHub
@@ -251,3 +242,21 @@ func CreatePullRequest(owner string, repo string, options CreatePullRequestParam
 
 	return pr["number"] != nil
 }
+
+func GetMyUserLogin() string {
+	cmd := exec.Command(
+		"gh",
+		"api",
+		"user",
+		"--jq",
+		".login",
+	)
+	output, err := cmd.Output()
+	if err != nil {
+		log.Fatalf("Failed to execute gh command: %v", err)
+	}
+
+	return strings.TrimSpace(string(output))
+}
+
+// func GetRepoOwner
